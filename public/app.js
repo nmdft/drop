@@ -22,14 +22,7 @@ function notice(id, message, error = false) {
 }
 
 async function refreshStatus() {
-  try {
-    limits = await api('status');
-    element('storage-detail').textContent = `已使用 ${bytes(limits.usedBytes)} · 当前单文件上限 ${bytes(limits.maxFileBytes)}`;
-    element('storage-meter').value = limits.usedBytes;
-    element('storage-meter').max = limits.capacityBytes;
-  } catch {
-    element('storage-detail').textContent = '暂时无法读取存储状态，请稍后重试。';
-  }
+  try { limits = await api('status'); } catch { limits = undefined; }
 }
 
 function solveProof(challenge) {
@@ -66,7 +59,7 @@ element('file').addEventListener('change', () => {
 element('text').addEventListener('input', () => {
   if (element('file').files.length) clearFile();
   const size = new TextEncoder().encode(element('text').value).byteLength;
-  element('text-count').textContent = `${bytes(size)} / 100 KB`;
+    element('text-count').textContent = `${bytes(size)}`;
 });
 
 function clearFile() {
@@ -104,7 +97,7 @@ element('send-form').addEventListener('submit', async event => {
     const text = element('text').value;
     const kind = file ? 'file' : 'text';
     if (kind === 'file' && (file.size === 0 || file.size > (limits?.maxFileBytes ?? 300000000))) throw new Error('文件不能为空或超过当前大小限制。');
-    if (kind === 'text' && (!text || new TextEncoder().encode(text).byteLength > 100000)) throw new Error('请粘贴文字，或选择一个文件。');
+    if (kind === 'text' && (!text || new TextEncoder().encode(text).byteLength > 1000000)) throw new Error('请粘贴文字，或选择一个文件。');
     notice('send-notice', '正在进行匿名发送计算验证，请稍候…');
     const challenge = await api('challenge', {});
     const nonce = await solveProof(challenge);
@@ -138,7 +131,6 @@ element('send-form').addEventListener('submit', async event => {
     element('revoke-link').value = `${location.origin}/#revoke=${encodeURIComponent(result.revokeToken)}`;
     notice('send-notice', '发送成功。请妥善保存取件码；撤销链接仅供自己使用。');
     element('send-progress').value = 1;
-    await refreshStatus();
   } catch (error) {
     notice('send-notice', error.message, true);
     if (uploadToken && !committed) {
@@ -217,7 +209,6 @@ element('revoke-button').addEventListener('click', async () => {
     await api('revoke', { token: latestReceipt.revokeToken });
     element('receipt').hidden = true;
     notice('send-notice', '内容已撤销。取件码仍会保留至三天期满，避免被复用。');
-    await refreshStatus();
   } catch (error) { notice('send-notice', error.message, true); }
 });
 

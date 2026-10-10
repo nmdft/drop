@@ -103,8 +103,8 @@ test('multi-chunk file and download expiration on every chunk request', async ()
 
 test('UTF-8 text limit counts bytes rather than characters', async () => {
   const { service, input } = fixture();
-  await service.send(input({ text: '汉'.repeat(33333) }), '127.0.0.1');
-  await assert.rejects(service.send(input({ text: '汉'.repeat(33334) }), '127.0.0.1'), { status: 413 });
+  await service.send(input({ text: '汉'.repeat(333333) }), '127.0.0.1');
+  await assert.rejects(service.send(input({ text: '汉'.repeat(333334) }), '127.0.0.1'), { status: 413 });
 });
 
 test('capacity lowers limit at 900MB and rejects exceeding remaining space', async () => {
@@ -242,11 +242,11 @@ test('HTTP layer rejects cross-origin, malformed JSON, oversized body and method
   assert.equal((await call(new Request('https://test/api/pickup'))).status, 405);
   assert.equal((await call(new Request('https://test/api/pickup', { method: 'POST', headers: { origin: 'https://evil' }, body: '{}' }))).status, 403);
   assert.equal((await call(new Request('https://test/api/pickup', { method: 'POST', body: '{' }))).status, 400);
-  assert.equal((await call(new Request('https://test/api/pickup', { method: 'POST', body: 'x'.repeat(700000) }))).status, 413);
+  assert.equal((await call(new Request('https://test/api/pickup', { method: 'POST', body: 'x'.repeat(7000000) }))).status, 413);
   await assert.rejects(readBody(new Request('https://test', { method: 'POST', body: '12345' }), 4), { status: 413 });
 });
 
-test('100KB text limit allows JSON escape expansion without admitting oversized text', async () => {
+test('1MB text limit allows JSON escape expansion without admitting oversized text', async () => {
   const { service, input } = fixture();
   const call = text => handle({ request: new Request('https://test/api/send', { method: 'POST', body: JSON.stringify(input({ text })) }), clientIp: '127.0.0.1' }, () => service, 'send');
   const text = '\u0001'.repeat(LIMITS.text);
