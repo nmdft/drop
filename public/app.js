@@ -1,7 +1,6 @@
 const element = id => document.getElementById(id);
 const bytes = size => size < 1000000 ? `${(size / 1000).toFixed(1)} KB` : `${(size / 1000000).toFixed(1)} MB`;
 const date = timestamp => new Date(timestamp).toLocaleString('zh-CN', { hour12: false });
-let selectedKind = 'file';
 let sending = false;
 let receiving;
 let latestReceipt;
@@ -54,26 +53,41 @@ async function copy(value, messageId) {
   catch { notice(messageId, '复制失败，请手动选中内容复制。', true); }
 }
 
-for (const button of document.querySelectorAll('[data-kind]')) {
-  button.addEventListener('click', () => {
-    if (sending) return;
-    selectedKind = button.dataset.kind;
-    for (const tab of document.querySelectorAll('[data-kind]')) {
-      tab.classList.toggle('active', tab === button);
-      tab.setAttribute('aria-selected', String(tab === button));
-    }
-    element('file-input-area').hidden = selectedKind !== 'file';
-    element('text-input-area').hidden = selectedKind !== 'text';
-  });
-}
-
 element('file').addEventListener('change', () => {
   const file = element('file').files[0];
-  element('file-label').textContent = file ? `${file.name} · ${bytes(file.size)}` : '点击选择一个文件';
+  if (!file) return;
+  element('text').value = '';
+  element('text').hidden = true;
+  element('text-count').hidden = true;
+  element('file-label').textContent = `${file.name} · ${bytes(file.size)}`;
+  element('file-picker').classList.add('selected');
+  element('clear-file').hidden = false;
 });
 element('text').addEventListener('input', () => {
+  if (element('file').files.length) clearFile();
   const size = new TextEncoder().encode(element('text').value).byteLength;
   element('text-count').textContent = `${bytes(size)} / 100 KB`;
+});
+
+function clearFile() {
+  element('file').value = '';
+  element('file-label').textContent = '拖入文件，或点击选择';
+  element('file-picker').classList.remove('selected');
+  element('clear-file').hidden = true;
+  element('text').hidden = false;
+  element('text-count').hidden = false;
+}
+
+element('clear-file').addEventListener('click', clearFile);
+for (const eventName of ['dragenter', 'dragover']) element('composer').addEventListener(eventName, event => { event.preventDefault(); element('composer').classList.add('dragging'); });
+for (const eventName of ['dragleave', 'drop']) element('composer').addEventListener(eventName, event => { event.preventDefault(); element('composer').classList.remove('dragging'); });
+element('composer').addEventListener('drop', event => {
+  const [file] = event.dataTransfer.files;
+  if (!file) return;
+  const transfer = new DataTransfer();
+  transfer.items.add(file);
+  element('file').files = transfer.files;
+  element('file').dispatchEvent(new Event('change'));
 });
 
 element('send-form').addEventListener('submit', async event => {
@@ -88,15 +102,15 @@ element('send-form').addEventListener('submit', async event => {
   try {
     const file = element('file').files[0];
     const text = element('text').value;
-    if (selectedKind === 'file' && !file) throw new Error('请先选择一个文件。');
-    if (selectedKind === 'file' && (file.size === 0 || file.size > (limits?.maxFileBytes ?? 300000000))) throw new Error('文件不能为空或超过当前大小限制。');
-    if (selectedKind === 'text' && (!text || new TextEncoder().encode(text).byteLength > 100000)) throw new Error('文字不能为空或超过100KB。');
+    const kind = file ? 'file' : 'text';
+    if (kind === 'file' && (file.size === 0 || file.size > (limits?.maxFileBytes ?? 300000000))) throw new Error('文件不能为空或超过当前大小限制。');
+    if (kind === 'text' && (!text || new TextEncoder().encode(text).byteLength > 100000)) throw new Error('请粘贴文字，或选择一个文件。');
     notice('send-notice', '正在进行匿名发送计算验证，请稍候…');
     const challenge = await api('challenge', {});
     const nonce = await solveProof(challenge);
     notice('send-notice', '正在预留空间…');
-    let result = await api('send', { kind: selectedKind, duration: Number(element('duration').value), challengeToken: challenge.token, nonce, ...(selectedKind === 'file' ? { name: file.name, size: file.size } : { text }) });
-    if (selectedKind === 'file') {
+    let result = await api('send', { kind, duration: Number(element('duration').value), challengeToken: challenge.token, nonce, ...(kind === 'file' ? { name: file.name, size: file.size } : { text }) });
+    if (kind === 'file') {
       uploadToken = result.uploadToken;
       for (let index = 0; index < result.parts; index += 1) {
         notice('send-notice', `正在上传 ${index + 1} / ${result.parts} 个分块…`);

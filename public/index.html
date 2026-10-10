@@ -4,33 +4,48 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="用四位取件码，临时传递一个文件或一段文字。">
-  <title>临时取件站 · Pickup Drop</title>
+  <title>Drop · 临时传递</title>
   <link rel="stylesheet" href="style.css">
   <script src="app.js" defer></script>
 </head>
 <body>
+<div class="ambient ambient-a" aria-hidden="true"></div><div class="ambient ambient-b" aria-hidden="true"></div>
 <main>
-  <header>
-    <div><span class="eyebrow">PICKUP DROP / 临时传递</span><h1>把文件留在这里，<br>去另一端取走。</h1><p>一个文件，一段文字。无需注册，四位码取件。</p></div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Drop 首页"><span class="brand-mark">D</span><span><strong>drop</strong><small>临时传递</small></span></a>
     <div class="storage"><span id="storage-detail">正在读取存储状态…</span><meter id="storage-meter" min="0" max="980000000" value="0" aria-label="存储占用"></meter></div>
   </header>
-  <div class="panels">
-    <section class="panel" aria-labelledby="send-heading">
-      <div class="heading"><span class="step">01</span><h2 id="send-heading">发送</h2></div>
-      <div class="tabs" role="tablist" aria-label="发送内容类型"><button type="button" role="tab" data-kind="file" class="active" aria-selected="true">文件</button><button type="button" role="tab" data-kind="text" aria-selected="false">文字</button></div>
+
+  <section class="hero" aria-labelledby="page-title">
+    <div><p class="eyebrow">DROP / PRIVATE BY DEFAULT</p><h1 id="page-title">把内容放下，<br><em>在另一端取走。</em></h1></div>
+    <p class="hero-copy">无需注册。一个文件，或一段文字。<br>给对方四位码，就够了。</p>
+  </section>
+
+  <div class="workspace">
+    <section class="panel send-panel" aria-labelledby="send-heading">
+      <div class="panel-top"><div><span class="kicker">01 / SEND</span><h2 id="send-heading">发送内容</h2></div><span class="status-dot">在线</span></div>
       <form id="send-form">
-        <div id="file-input-area"><label class="file-picker"><span class="file-icon" aria-hidden="true">↥</span><span id="file-label">点击选择一个文件</span><span class="hint">单文件最大300MB，空间紧张时降至1MB</span><input id="file" type="file" aria-label="选择文件"></label></div>
-        <div id="text-input-area" hidden><label for="text">要传递的文字</label><textarea id="text" placeholder="粘贴链接、笔记或一段文字…"></textarea><span class="hint" id="text-count">0 KB / 100 KB</span></div>
-        <label for="duration">取件码有效期</label><select id="duration"><option value="3600">1小时（默认）</option><option value="10800">3小时</option><option value="86400">1天</option><option value="259200">3天</option></select>
-        <p class="hint">从发送成功开始计时。内容保留3天，码到期后不可再领取。</p>
-        <button class="primary" id="send-button" type="submit">发送并生成取件码</button>
+        <div id="composer" class="composer">
+          <textarea id="text" placeholder="粘贴文字、链接或笔记…" aria-label="要传递的文字"></textarea>
+          <span id="text-count" class="composer-meta">0 KB / 100 KB</span>
+          <label id="file-picker" class="file-picker"><span class="file-glyph">＋</span><span id="file-label">拖入文件，或点击选择</span><span class="file-limit">单文件最大 300 MB</span><input id="file" type="file" aria-label="选择文件"></label>
+          <button id="clear-file" class="clear-file" type="button" hidden aria-label="移除文件">×</button>
+        </div>
+        <div class="send-options"><label for="duration">取件码有效期</label><select id="duration"><option value="3600">1 小时</option><option value="10800">3 小时</option><option value="86400">1 天</option><option value="259200">3 天</option></select></div>
+        <button class="primary action-button" id="send-button" type="submit"><span>生成取件码</span><span aria-hidden="true">↗</span></button>
       </form>
       <p id="send-notice" class="notice" role="status" aria-live="polite"></p><progress id="send-progress" max="1" value="0" hidden aria-label="上传进度"></progress>
-      <div id="receipt" class="receipt" hidden><span class="hint">在另一台设备输入</span><div class="code" id="receipt-code"></div><p id="receipt-expiry" class="detail"></p><label for="receipt-link">取件链接</label><input id="receipt-link" class="small-input" readonly><div class="actions"><button id="copy-code" type="button">复制取件码</button><button id="copy-link" type="button">复制取件链接</button></div><details><summary>撤销分享（仅自己保存）</summary><p class="hint">持有此链接的人可以删除内容。请勿发给收件人。</p><input id="revoke-link" class="small-input" readonly aria-label="撤销链接"><div class="actions"><button id="copy-revoke" type="button">复制撤销链接</button><button id="revoke-button" class="danger" type="button">立即撤销</button></div></details></div>
+      <div id="receipt" class="receipt" hidden><span class="eyebrow">已准备好</span><div class="code" id="receipt-code"></div><p id="receipt-expiry" class="detail"></p><input id="receipt-link" class="small-input" readonly aria-label="取件链接"><div class="actions"><button id="copy-code" type="button">复制取件码</button><button id="copy-link" type="button">复制链接</button></div><details><summary>撤销这次分享</summary><input id="revoke-link" class="small-input" readonly aria-label="撤销链接"><div class="actions"><button id="copy-revoke" type="button">复制撤销链接</button><button id="revoke-button" class="danger" type="button">立即撤销</button></div></details></div>
     </section>
-    <section class="panel" aria-labelledby="pickup-heading"><div class="heading"><span class="step">02</span><h2 id="pickup-heading">取件</h2></div><p class="hint">输入发送者给你的四位数字。有效期内，可重复取件。</p><form id="pickup-form"><label for="code">取件码</label><input id="code" type="text" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" placeholder="0000" autocomplete="off" required><button id="pickup-button" class="primary" type="submit">打开内容</button></form><p id="pickup-notice" class="notice" role="status" aria-live="polite"></p><div id="received" class="received" hidden><h3 id="received-name"></h3><p id="received-detail" class="detail"></p><pre id="received-text" hidden></pre><button id="copy-text" class="primary" type="button" hidden>复制文字</button><button id="download-button" class="primary" type="button" hidden>下载文件</button></div></section>
+
+    <section class="panel pickup-panel" aria-labelledby="pickup-heading">
+      <div class="panel-top"><div><span class="kicker">02 / PICKUP</span><h2 id="pickup-heading">取件</h2></div><span class="code-badge">4 位数字</span></div>
+      <div class="pickup-intro"><span class="orb" aria-hidden="true">↓</span><p>输入发送者给你的取件码。<br>有效期内可以重复领取。</p></div>
+      <form id="pickup-form"><label class="sr-only" for="code">取件码</label><input id="code" type="text" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" placeholder="0000" autocomplete="off" required><button id="pickup-button" class="primary action-button" type="submit"><span>打开内容</span><span aria-hidden="true">↘</span></button></form>
+      <p id="pickup-notice" class="notice" role="status" aria-live="polite"></p><div id="received" class="received" hidden><h3 id="received-name"></h3><p id="received-detail" class="detail"></p><pre id="received-text" hidden></pre><button id="copy-text" class="primary" type="button" hidden>复制文字</button><button id="download-button" class="primary" type="button" hidden>下载文件</button></div>
+    </section>
   </div>
-  <footer>临时传递，不是私密保险箱。四位码可能被猜到，请勿上传密码、证件或敏感资料。<br>内容满72小时即停止访问，每天定时清理；实际删除可能延迟。请勿上传违法内容。</footer>
+  <footer><span>内容保留 72 小时 · 取件码最多 3 天</span><span>请勿上传密码、证件或敏感资料</span></footer>
 </main>
 </body>
 </html>
