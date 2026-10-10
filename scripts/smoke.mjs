@@ -78,7 +78,7 @@ try {
     const chunk = Buffer.from(await api('download', { token: file.downloadToken, index }, { binary: true }));
     bytes += chunk.byteLength;
     downloaded.update(chunk);
-    if (index % 10 === 0 || index + 1 === file.parts) console.log(`Download: ${index + 1}/${file.parts}`);
+    console.log(`Download: ${index + 1}/${file.parts}`);
   }
   assert.equal(bytes, size);
   assert.equal(downloaded.digest('hex'), original.digest('hex'));
