@@ -22,7 +22,10 @@ function notice(id, message, error = false) {
 }
 
 async function refreshStatus() {
-  try { limits = await api('status'); } catch { limits = undefined; }
+  try {
+    limits = await api('status');
+    element('file-limit').textContent = `最多 ${bytes(limits.maxFileBytes)}`;
+  } catch { limits = undefined; }
 }
 
 function solveProof(challenge) {
@@ -50,25 +53,21 @@ element('file').addEventListener('change', () => {
   const file = element('file').files[0];
   if (!file) return;
   element('text').value = '';
-  element('text').hidden = true;
-  element('text-count').hidden = true;
   element('file-label').textContent = `${file.name} · ${bytes(file.size)}`;
+  element('file-limit').textContent = limits ? `最多 ${bytes(limits.maxFileBytes)}` : '最多 300 MB';
   element('file-picker').classList.add('selected');
   element('clear-file').hidden = false;
 });
 element('text').addEventListener('input', () => {
   if (element('file').files.length) clearFile();
-  const size = new TextEncoder().encode(element('text').value).byteLength;
-    element('text-count').textContent = `${bytes(size)}`;
 });
 
 function clearFile() {
   element('file').value = '';
-  element('file-label').textContent = '拖入文件，或点击选择';
+  element('file-label').textContent = '拖入文件或点击选择';
   element('file-picker').classList.remove('selected');
   element('clear-file').hidden = true;
-  element('text').hidden = false;
-  element('text-count').hidden = false;
+  element('file-limit').textContent = limits ? `最多 ${bytes(limits.maxFileBytes)}` : '最多 300 MB';
 }
 
 element('clear-file').addEventListener('click', clearFile);
