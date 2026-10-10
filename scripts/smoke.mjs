@@ -50,6 +50,9 @@ try {
   assert.equal((await api('pickup', { code: receipt.code })).text, text);
   console.log('PASS: real text storage, four-digit code, repeated pickup');
 
+  await assert.rejects(api('send', await proof({ kind: 'file', size: 300000001, name: 'over-limit.bin' })), { status: 413 });
+  console.log('PASS: server rejects files exceeding 300MB');
+
   const size = Number(process.env.FILE_MB || '5') * 1000000;
   assert.ok(Number.isSafeInteger(size) && size > 0 && size <= 300000000);
   const upload = await api('send', await proof({ kind: 'file', size, name: `verification-${size}.bin` }));

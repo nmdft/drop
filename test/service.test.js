@@ -242,8 +242,19 @@ test('HTTP layer rejects cross-origin, malformed JSON, oversized body and method
   assert.equal((await call(new Request('https://test/api/pickup'))).status, 405);
   assert.equal((await call(new Request('https://test/api/pickup', { method: 'POST', headers: { origin: 'https://evil' }, body: '{}' }))).status, 403);
   assert.equal((await call(new Request('https://test/api/pickup', { method: 'POST', body: '{' }))).status, 400);
-  assert.equal((await call(new Request('https://test/api/pickup', { method: 'POST', body: 'x'.repeat(200000) }))).status, 413);
+  assert.equal((await call(new Request('https://test/api/pickup', { method: 'POST', body: 'x'.repeat(700000) }))).status, 413);
   await assert.rejects(readBody(new Request('https://test', { method: 'POST', body: '12345' }), 4), { status: 413 });
+});
+
+test('100KB text limit allows JSON escape expansion without admitting oversized text', async () => {
+  const { service, input } = fixture();
+  const call = text => handle({ request: new Request('https://test/api/send', { method: 'POST', body: JSON.stringify(input({ text })) }), clientIp: '127.0.0.1' }, () => service, 'send');
+  const text = '\u0001'.repeat(LIMITS.text);
+  const response = await call(text);
+  assert.equal(response.status, 200);
+  const receipt = await response.json();
+  assert.equal((await service.pickup(receipt.code, 'receiver')).text, text);
+  assert.equal((await call('a'.repeat(LIMITS.text + 1))).status, 413);
 });
 
 test('service refuses unconfigured secrets without exposing internal details', () => {

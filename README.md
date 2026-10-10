@@ -55,7 +55,17 @@ node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 edgeone makers dev -n pickup-drop --skip-env-sync --skip-ai-gateway-sync
 ```
 
-CLI会使用/关联名为`pickup-drop`的项目；仅在你希望创建该项目时执行。开发入口通常是`http://127.0.0.1:8088/`。
+CLI会使用/关联名为`pickup-drop`的项目；仅在你希望创建该项目时执行。开发入口通常是`http://127.0.0.1:8088/`。修改共享`lib/`代码后，重启Makers开发服务以重新打包函数。
+
+真实HTTP与Blob验收（会产生自己的测试内容，结束后撤销）：
+
+```sh
+TEST_URL=http://127.0.0.1:8088 FILE_MB=300 node scripts/smoke.mjs
+```
+
+`TEST_URL`也可填写完整的Makers限时预览URL（必须保留校验参数）。脚本先交换授权Cookie，再请求API；限时预览不能用作每日清理的长期地址。`VERIFY_CLEANUP=1`额外验证自己的文字记录到期后不可领取，并确认清理接口物理删除；需要通过环境变量提供`EDGEONE_PROJECT_ID`、`EDGEONE_PAGES_API_TOKEN`和`CLEANUP_SECRET`，不要把凭据写入命令记录或仓库。
+
+空站点的真实并发与容量预留验收：提供上述项目凭据及`SITE_SECRET`，运行`node scripts/storage-check.mjs`。该脚本使用独立Blob客户端并发发送文字，再并发预留三个300MB上传，检查900MB以上只允许1MB，并撤销自己创建的全部记录。它验证的是**实际Blob上的容量预留**，不会为了容量测试再写入900MB文件，也不会删除已有内容；发现站点已有保留内容就拒绝运行。
 
 ## 正式部署（Git关联）
 
@@ -82,12 +92,21 @@ EDGEONE_PROJECT_ID=your-project-id EDGEONE_PAGES_API_TOKEN=your-token node scrip
 
 确认恢复结束后恢复流量，并手动运行清理工作流。工具不会打印Token。
 
+## 本次已验证（2026-10-10）
+
+- 私有仓库`nmdft/pickup-drop`与Git连接项目`makers-ijb6oj4eou6x`；环境变量已配置，Git发布成功。
+- 24项单元测试通过；Makers本地运行器访问真实Blob，300MB/75分块上传下载SHA-256一致。
+- 已部署站点5MB HTTP上传下载哈希一致；实际Edge浏览器计算验证、文字发送与四位码领取通过。
+- 独立真实Blob客户端并发分配不同取件码；900MB容量预留触发1MB限制，拒绝超限请求，测试预留撤销后归零。
+- 本地HTTP接口真实过期验收：只修改自己的测试记录，到期访问被拒绝，清理接口物理删除。
+- **稳定自定义域名及GitHub每日清理尚未启用**：需用户提供绑定好的域名，设置`SITE_URL`并实际运行工作流后再确认。默认预览只有效3小时。
+
 ## 上线验收清单
 
-- [ ] 正式Makers账号项目、Blob写入/强一致读取和函数路由通过验证。
+- [x] 正式Makers账号项目、Blob写入/强一致读取和函数路由通过验证。
 - [ ] 两台设备完成文字发送/复制与文件上传/下载。
 - [ ] 300MB文件真实平台上传、下载、字节哈希一致，300MB以上被服务端拒绝。
-- [ ] 并发发送和900MB容量降级实测，取件码不覆盖已有内容。
+- [x] 并发发送和900MB容量预留降级实测，取件码不覆盖已有内容。
 - [ ] 默认1小时到期拒绝新的领取和分块下载。
 - [ ] GitHub每日清理工作流实际成功执行，过期对象不再存在。
 - [ ] 匿名访问限流/WAF/请求额度告警按实际账户能力配置。
