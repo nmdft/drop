@@ -213,6 +213,19 @@ test('stale lock fails closed rather than overwriting state', async () => {
   assert.equal((await store.list({ prefix: 'locks/' })).blobs.length, 1);
 });
 
+test('Makers parsed body override preserves raw JSON and binary size checks', async () => {
+  const request = new Request('https://test/api/challenge', { method: 'POST', body: '{}' });
+  Object.defineProperty(request, 'body', { get: () => Promise.resolve({}) });
+  assert.equal((await readBody(request, 2)).toString(), '{}');
+  const oversized = new Request('https://test/api/part', { method: 'POST', body: Buffer.from([0, 255, 1, 2, 3]) });
+  Object.defineProperty(oversized, 'body', { get: () => Buffer.from([0, 255, 1, 2, 3]) });
+  await assert.rejects(readBody(oversized, 4), { status: 413 });
+  const { service } = fixture();
+  const fresh = new Request('https://test/api/challenge', { method: 'POST', body: '{}' });
+  Object.defineProperty(fresh, 'body', { get: () => ({}) });
+  assert.equal((await handle({ request: fresh, clientIp: 'sender' }, () => service, 'challenge')).status, 200);
+});
+
 test('HTTP layer rejects cross-origin, malformed JSON, oversized body and method mismatch', async () => {
   const { service } = fixture();
   const call = request => handle({ request, clientIp: 'receiver' }, () => service, 'pickup');
