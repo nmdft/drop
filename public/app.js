@@ -125,7 +125,7 @@ element('send-form').addEventListener('submit', async event => {
     latestReceipt = result;
     element('receipt').hidden = false;
     element('receipt-code').textContent = result.code;
-    element('receipt-expiry').textContent = `取件码有效至 ${date(result.expiresAt)}；内容保留至 ${date(result.deleteAt)}。`;
+    element('receipt-expiry').textContent = `取件码有效期至 ${date(result.expiresAt)}`;
     element('receipt-link').value = `${location.origin}/#code=${result.code}`;
     element('revoke-link').value = `${location.origin}/#revoke=${encodeURIComponent(result.revokeToken)}`;
     notice('send-notice', '发送成功。请妥善保存取件码；撤销链接仅供自己使用。');

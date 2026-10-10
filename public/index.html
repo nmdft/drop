@@ -20,19 +20,19 @@
       <form id="send-form">
         <div id="composer" class="composer"><div class="text-box"><textarea id="text" placeholder="粘贴文字、链接或笔记…" aria-label="要传递的文字"></textarea></div><label id="file-picker" class="file-picker"><span class="file-glyph">＋</span><span id="file-label">拖入文件或点击选择</span><span id="file-limit" class="file-limit">最多 300 MB</span><input id="file" type="file" aria-label="选择文件"></label><button id="clear-file" class="clear-file" type="button" hidden aria-label="移除文件">×</button></div>
         <div class="send-options"><label for="duration">取件码有效期</label><select id="duration"><option value="3600">1 小时</option><option value="10800">3 小时</option><option value="86400">1 天</option><option value="259200">3 天</option></select></div>
-        <button class="primary action-button" id="send-button" type="submit"><span>生成取件码</span><span aria-hidden="true">↗</span></button>
+        <button class="primary action-button" id="send-button" type="submit">生成取件码</button>
       </form>
       <p id="send-notice" class="notice" role="status" aria-live="polite"></p><progress id="send-progress" max="1" value="0" hidden aria-label="上传进度"></progress>
       <div id="receipt" class="receipt" hidden><span class="eyebrow">已准备好</span><div class="code" id="receipt-code"></div><p id="receipt-expiry" class="detail"></p><input id="receipt-link" class="small-input" readonly aria-label="取件链接"><div class="actions"><button id="copy-code" type="button">复制取件码</button><button id="copy-link" type="button">复制链接</button></div><details><summary>撤销这次分享</summary><input id="revoke-link" class="small-input" readonly aria-label="撤销链接"><div class="actions"><button id="copy-revoke" type="button">复制撤销链接</button><button id="revoke-button" class="danger" type="button">立即撤销</button></div></details></div>
     </section>
     <section class="panel pickup-panel" aria-labelledby="pickup-heading">
       <div class="panel-top"><h2 id="pickup-heading">取件</h2></div>
-      <div class="pickup-center"><form id="pickup-form"><label class="sr-only" for="code">取件码</label><input id="code" type="text" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" placeholder="取件码" autocomplete="off" required><button id="pickup-button" class="primary action-button" type="submit"><span>打开内容</span><span aria-hidden="true">↘</span></button></form></div>
-      <p id="pickup-notice" class="notice" role="status" aria-live="polite"></p><div id="received" class="received" hidden><h3 id="received-name"></h3><p id="received-detail" class="detail"></p><pre id="received-text" hidden></pre><button id="copy-text" class="primary" type="button" hidden>复制文字</button><button id="download-button" class="primary" type="button" hidden>下载文件</button></div>
+      <div class="pickup-center"><form id="pickup-form"><label class="sr-only" for="code">取件码</label><input id="code" type="text" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" placeholder="取件码" autocomplete="off" required><button id="pickup-button" class="primary action-button" type="submit">打开内容</button></form></div>
+      <p id="pickup-notice" class="notice" role="status" aria-live="polite"></p><div id="received" class="received" hidden><h3 id="received-name"></h3><p id="received-detail" class="detail"></p><div class="received-text-wrap"><pre id="received-text" hidden></pre><button id="copy-text" type="button" hidden>复制</button></div><button id="download-button" class="primary" type="button" hidden>下载文件</button></div>
     </section>
 
   </div>
-  <footer>内容在有效期过后就直接删除 · 请勿上传敏感内容</footer>
+  <footer>有效期过后删除，请勿上传敏感内容</footer>
 </main>
 </body>
 </html>

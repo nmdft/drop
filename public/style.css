@@ -56,3 +56,28 @@ footer { padding-top: 18px; }
   .panel { min-height: auto; padding: 24px; }
   .pickup-center { padding: 24px 0 16px; }
 }
+
+/* Small-screen polish */
+.text-box,
+.file-picker { width: 100%; }
+.file-picker { box-sizing: border-box; }
+.received-text-wrap { position: relative; }
+.received-text-wrap pre { padding-right: 72px; }
+#copy-text { position: absolute; top: 10px; right: 10px; padding: 7px 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-strong); color: var(--accent); font: 600 12px inherit; cursor: pointer; }
+#copy-text:hover { border-color: var(--accent); background: var(--accent-soft); }
+@media (max-width: 780px) {
+  .hero { padding-top: 30px; padding-bottom: 22px; }
+  .workspace { gap: 14px; }
+  .panel { padding: 22px; }
+  .panel-top { margin-bottom: 18px; }
+  .composer { gap: 10px; }
+  .text-box { min-height: 140px; }
+  .composer textarea { min-height: 138px; }
+  .file-picker { min-height: 74px; }
+  .send-options { margin-top: 14px; }
+  .send-panel .action-button { margin-top: 14px; }
+  .pickup-center { flex: none; padding: 12px 0 10px; }
+  .pickup-center form { gap: 10px; }
+  .pickup-panel .notice { margin-top: 8px; }
+  footer { padding-top: 14px; }
+}
