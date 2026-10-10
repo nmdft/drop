@@ -1,0 +1,15 @@
+{
+  "name": "pickup-drop",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "build": "node scripts/build.mjs",
+    "dev": "edgeone makers dev -n pickup-drop --skip-env-sync"
+  },
+  "dependencies": {
+    "@edgeone/pages-blob": "0.0.18"
+  },
+  "engines": { "node": ">=20" }
+}

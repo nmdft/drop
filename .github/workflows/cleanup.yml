@@ -1,0 +1,31 @@
+name: Daily cleanup
+on:
+  schedule:
+    - cron: '23 19 * * *'
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: daily-cleanup
+  cancel-in-progress: false
+jobs:
+  cleanup:
+    if: vars.SITE_URL != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Delete expired content
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+          CLEANUP_SECRET: ${{ secrets.CLEANUP_SECRET }}
+        run: |
+          test -n "$CLEANUP_SECRET"
+          for batch in $(seq 1 500); do
+            result=$(curl --fail-with-body --silent --show-error --retry 3 --retry-all-errors \
+              --connect-timeout 15 --max-time 115 \
+              -X POST -H "Authorization: Bearer $CLEANUP_SECRET" \
+              "${SITE_URL%/}/api/cleanup")
+            echo "$result"
+            if [ "$(echo "$result" | jq -r '.more')" = false ]; then exit 0; fi
+          done
+          echo 'Cleanup incomplete: exceeded batch limit' >&2
+          exit 1
