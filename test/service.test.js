@@ -226,6 +226,16 @@ test('Makers parsed body override preserves raw JSON and binary size checks', as
   assert.equal((await handle({ request: fresh, clientIp: 'sender' }, () => service, 'challenge')).status, 200);
 });
 
+test('browser same-origin metadata works behind proxy without accepting cross-origin requests', async () => {
+  const { service } = fixture();
+  const call = headers => handle({ request: new Request('http://internal/api/challenge', { method: 'POST', headers, body: '{}' }), clientIp: 'sender' }, () => service, 'challenge');
+  assert.equal((await call({ origin: 'https://public.example', 'sec-fetch-site': 'same-origin' })).status, 200);
+  assert.equal((await call({ origin: 'https://evil.example', 'sec-fetch-site': 'cross-site' })).status, 403);
+  assert.equal((await call({ origin: 'https://sub.public.example', 'sec-fetch-site': 'same-site' })).status, 403);
+  assert.equal((await call({ origin: 'https://evil.example' })).status, 403);
+  assert.equal((await call({ origin: 'http://internal' })).status, 200);
+});
+
 test('HTTP layer rejects cross-origin, malformed JSON, oversized body and method mismatch', async () => {
   const { service } = fixture();
   const call = request => handle({ request, clientIp: 'receiver' }, () => service, 'pickup');

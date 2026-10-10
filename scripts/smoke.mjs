@@ -5,17 +5,25 @@ import { getStore } from '@edgeone/pages-blob';
 const target = process.env.TEST_URL;
 if (!target) throw new Error('Set TEST_URL to a local or deployed HTTPS site URL.');
 const base = new URL(target);
+let cookie = '';
+if (base.searchParams.has('eo_token')) {
+  const response = await fetch(base, { redirect: 'manual', signal: AbortSignal.timeout(30000) });
+  cookie = response.headers.getSetCookie().map(value => value.split(';')[0]).join('; ');
+  assert.ok(cookie, 'Preview authorization did not issue cookies; obtain a fresh preview URL.');
+  base.search = '';
+}
 const receipts = [];
 const api = async (action, body, options = {}) => {
   const url = new URL(`/api/${action}`, base);
   url.search = base.search;
   const response = await fetch(url, {
     method: body === undefined ? 'GET' : 'POST',
-    headers: { ...body === undefined ? {} : { 'Content-Type': 'application/json' }, ...options.headers },
+    headers: { ...body === undefined ? {} : { 'Content-Type': 'application/json', Origin: base.origin, 'Sec-Fetch-Site': 'same-origin' }, ...(cookie ? { Cookie: cookie } : {}), ...options.headers },
     body: body === undefined ? undefined : JSON.stringify(body),
     signal: AbortSignal.timeout(110000),
   });
   if (options.binary && response.ok) return response.arrayBuffer();
+  if (!response.headers.get('content-type')?.includes('application/json')) throw new Error(`${action}: HTTP ${response.status}, expected JSON; check site authorization and deployment.`);
   const output = await response.json();
   if (!response.ok) throw Object.assign(new Error(`${action}: ${output.error || response.status}`), { status: response.status });
   return output;
@@ -53,7 +61,7 @@ try {
     const url = new URL('/api/part', base);
     url.search = base.search;
     url.searchParams.set('index', String(index));
-    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream', 'X-Upload-Token': upload.uploadToken }, body: chunk, signal: AbortSignal.timeout(110000) });
+    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream', 'X-Upload-Token': upload.uploadToken, Origin: base.origin, 'Sec-Fetch-Site': 'same-origin', ...(cookie ? { Cookie: cookie } : {}) }, body: chunk, signal: AbortSignal.timeout(110000) });
     const output = await response.json();
     assert.equal(response.status, 200, output.error);
     if (index % 10 === 0 || index + 1 === upload.parts) console.log(`Upload: ${index + 1}/${upload.parts}`);
