@@ -11,5 +11,8 @@
   "dependencies": {
     "@edgeone/pages-blob": "0.0.18"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
 }

@@ -7,3 +7,10 @@ dist/
 .DS_Store
 coverage/
 .tef_dist/
+*.log
+*.pem
+*.key
+*.p12
+*.pfx
+.cc-connect/
+local-test/
