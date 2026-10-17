@@ -18,6 +18,6 @@ This is an experimental, best-effort project with no guaranteed response time. R
 
 ## Deployment safeguards
 
-Generate independent random `SITE_SECRET` and `CLEANUP_SECRET` values (at least 32 characters each). Keep `.env`, `.edgeone/`, access tokens and user content out of source archives. Ordinary tests must not use production credentials. A fork needs its own hosting project, secrets, `SITE_URL`, cleanup verification, traffic limits and spending alerts.
+Generate independent random `SITE_SECRET` and `CLEANUP_SECRET` values (at least 32 characters each). Keep `.env`, `.edgeone/`, access tokens and user content out of source archives. Ordinary tests must not use production credentials. A fork needs its own hosting project, secrets, native schedule verification, traffic limits and spending alerts. The build injects CLEANUP_SECRET into the private schedule payload: restrict project configuration access and never publish generated build configuration. Redeploy after changing that secret.
 
 Never run real-storage or cleanup tools against another operator's service. The diagnostic scripts can create/delete data and the lock reset script requires maintenance downtime.

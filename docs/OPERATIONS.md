@@ -11,7 +11,7 @@ EDGEONE_PROJECT_ID=your-project-id EDGEONE_PAGES_API_TOKEN=your-token node scrip
 EDGEONE_PROJECT_ID=your-project-id EDGEONE_PAGES_API_TOKEN=your-token node scripts/locks.mjs --reset-after-pausing-site
 ```
 
-确认恢复结束后恢复流量，并手动运行清理工作流。工具不会打印Token。
+确认恢复结束后恢复流量，并检查 Makers 原生定时清理任务的执行结果。工具不会打印Token。
 
 
 ## 验证范围与限制
@@ -22,3 +22,12 @@ EDGEONE_PROJECT_ID=your-project-id EDGEONE_PAGES_API_TOKEN=your-token node scrip
 
 
 容量策略现为 700MB 后限 10MB；旧验证记录中的容量阈值不代表当前配置。Blob 命名空间 `pickup-drop` 保留以兼容既有站点数据；这不是对外产品名。
+
+
+## 原生定时清理
+
+`edgeone.json` 的 `daily-cleanup` 使用 `Asia/Shanghai` 时区，每天 03:23 POST 到 `/api/scheduled-cleanup`。生产构建需要 `CLEANUP_SECRET`，任务 payload 由 `scripts/build.mjs` 注入；不要提交或公开生成后的私有构建配置。CI 不配置生产密钥，仅测试模板。
+
+定时函数复用原清理授权及存储锁，逐批处理，80 秒后不再启动下一批，函数上限为 120 秒。未完成会记录日志并返回 503，不应假定平台保证重试；检查日志并按需用已有带 Bearer 授权的 `/api/cleanup` 分批补清。不要通过公开 URL 或公开 payload 放置密钥。
+
+回滚时应回退到上一版本、重新部署并恢复旧 GitHub 清理工作流；仅回退代码不一定恢复已经移除的外部调度。

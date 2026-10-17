@@ -1,53 +1,63 @@
-# 部署 Drop 到 EdgeOne Makers
+# 新手部署指南：自己的 Drop 临时取件站
 
-## 1. Fork 并导入
+只需要 GitHub 账号和 EdgeOne Makers 账号。无需服务器，无需在电脑上安装软件或运行命令。
 
-Fork 本仓库，然后在 Makers 控制台新建 Git 关联项目，选择自己的仓库和 `main` 分支。保留仓库中的 `cloud-functions/` 与 `edgeone.json`。
+## 1. 复制项目到自己的 GitHub
 
-- 安装：`npm ci`
-- 构建：`npm run build`
-- 输出：`dist`
-- 运行环境：Node.js 20 或更高的兼容版本
+打开 [Drop 仓库](https://github.com/nmdft/drop)，点击右上角 **Fork**，再点击 **Create fork**。这会在你的账号下保存一份项目，并不是修改原作者的站点。
 
-静态页面、Cloud Functions 和 Blob 由 Makers 托管，无需单独购买或维护服务器。实际额度与费用以自己的平台套餐为准。
+## 2. 在 Makers 导入
 
-## 2. 首次配置密钥
+打开 EdgeOne Makers 控制台，选择从 Git 仓库新建项目，授权读取你刚才 Fork 的仓库，选择 `main` 分支。
 
-运行下面的命令，一次生成两个不同的随机值：
+构建设置按以下内容填写（如果已经自动识别，核对即可）：
 
-```sh
-node --input-type=module -e "import { randomBytes } from 'node:crypto'; for (const name of ['SITE_SECRET', 'CLEANUP_SECRET']) console.log(name + '=' + randomBytes(32).toString('hex'))"
-```
-
-将结果填入 **Makers 项目环境变量**，随后部署：
-
-| 名称 | 用途 |
+| 设置 | 填写内容 |
 | --- | --- |
-| `SITE_SECRET` | 签名上传、领取、撤销和计算验证令牌 |
-| `CLEANUP_SECRET` | 防止未授权调用清理接口 |
+| 安装命令 | `npm ci` |
+| 构建命令 | `npm run build` |
+| 输出目录 | `dist` |
+| Node.js 版本 | 20 或更高的兼容版本 |
 
-每个值至少 32 字符。不要直接抄别人的值或把它们写进代码。Blob 凭据由平台注入，不需要额外填写。已有部署无需更换密钥；换 `SITE_SECRET` 会使旧令牌失效。
+## 3. 自己生成并填写两串随机密码
 
-## 3. 启用每日清理
+这两串值是网站内部使用的密码，不是腾讯云 API Key，不用申请或购买。
 
-在自己的 GitHub 仓库启用 Actions，然后到 **Settings → Secrets and variables → Actions**：
+使用你信任的密码管理器的「随机密码生成」功能，分别生成 **两个不同的、64 位英文字母与数字组成的随机密码**。不要用姓名、生日、键盘顺序，或重复同一个字符凑长度；不要使用陌生在线密码生成网站。
 
-- 添加 Secret `CLEANUP_SECRET`：与 Makers 中的同名值一致。
-- 添加 Variable `SITE_URL`：自己的长期 HTTPS 根域名，不要填 Demo 域名或会过期的预览链接。
+在 Makers 项目的 **环境变量** 设置中，添加两行：
 
-手动运行一次 **Daily cleanup**，确认成功。之后每天 UTC 19:23（北京时间次日 03:23）清理超过所选保留时间的内容。定时任务可能延迟；公开仓库 60 天不活跃时会自动停用，应关注执行记录。详见 [GitHub 官方说明](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/disable-and-enable-workflows)。取件到期会立即拒绝访问，不依赖定时任务是否准时。
+| 变量名（照着填） | 变量值（填写你自己的） | 用途 |
+| --- | --- | --- |
+| `SITE_SECRET` | 第一串随机密码 | 防止上传、取件及撤销凭证被伪造 |
+| `CLEANUP_SECRET` | 第二串随机密码 | 只允许获授权的清理请求 |
 
-## 4. 验证
+保存时确保两个值都应用到 **生产构建和云函数运行环境**；不是填在浏览器代码、GitHub 文件或公开文档里。最低要求为 32 字符，建议按上述方式生成 64 位。保存到自己的密码管理器，之后部署继续使用原值，不要每次重新生成。
 
-打开站点，发送一段文字和一个小文件，在另一台设备领取，再验证撤销。`/api/health` 只检查存储连通，不代表完整功能验收。公网服务还应配置限流和额度告警。
+如果导入时已自动部署过一次，请在填好变量后重新部署。预览部署如需测试，也应配置对应环境的变量。
 
-## 本地完整预览
+## 4. 部署，检查结果
 
-复制 `.env.example` 为 `.env` 并填入自己的两个随机值，然后：
+点击部署，等状态变为成功，打开 Makers 提供的站点地址，测试：发送一段文字 → 输入取件码领取 → 发送一个小文件并下载 → 撤销后无法再领取。
 
-```sh
-edgeone login --site china
-edgeone makers dev -n your-drop-project --skip-env-sync --skip-ai-gateway-sync
-```
+静态页面、云函数和 Blob 由 Makers 托管，无需另建数据库或填写 Blob 账号。实际额度和费用以你自己的平台套餐为准；长期使用可再绑定自己的 HTTPS 域名。
 
-该命令会关联／创建指定 Makers 项目，需要账号授权。测试和静态构建不需要这些配置。真实存储脚本及锁恢复说明见 [运维文档](OPERATIONS.md)。
+## 每天清理由 Makers 自己执行
+
+项目已在 `edgeone.json` 配置原生定时任务 **daily-cleanup**：北京时间每天 **03:23**，调用 `/api/scheduled-cleanup`。部署时平台会同步任务，不需要启用 GitHub Actions，也不需要填写 GitHub Secret 或 `SITE_URL`。
+
+构建程序会把 `CLEANUP_SECRET` 放进本次部署的任务请求体，由清理函数核验；源码中的配置不包含你的密码。不要公开下载后的构建配置或任务请求体，限制有权查看项目配置的人员。它不是端到端加密。
+
+到期立即停止取件；真正删除在定时任务运行时进行。例如保留 1 小时的文件，不需要存满三天。任务会分批处理；大量积压、锁异常或运行时间不足时可能没删完，应检查函数执行日志中的完成／失败记录。健康接口正常不代表定时任务已经成功。
+
+首次部署建议在平台检查任务配置和执行记录；如果控制台提供手动触发入口，可以立即验证，否则观察下一次计划执行。取件是否到期不依赖定时任务准时触发。[官方定时任务说明](https://pages.edgeone.ai/document/edgeone-json)
+
+### 已有站点升级
+
+保留原来的两个密钥即可。GitHub 的旧清理工作流已移除，原来设置的 GitHub `CLEANUP_SECRET` 和 `SITE_URL` 不再被本项目使用，可以自行删除。**不要删除 Makers 中的两个密钥。**更改清理密钥后应重新部署，让定时请求和云函数使用同一个值；更改 `SITE_SECRET` 会让旧的签名凭证失效。
+
+## 可选：开发与故障排查
+
+只想部署网站可跳过此部分。开发者可按 README 安装依赖、运行测试和构建；静态构建与测试不需要生产密钥。本地完整预览需将自己的两个测试密钥填入 `.env`，再按 Makers CLI 的开发流程关联测试项目。
+
+[运维与验证](OPERATIONS.md) · [安全政策](../SECURITY.md)
