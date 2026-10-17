@@ -21,4 +21,3 @@ This is an experimental, best-effort project with no guaranteed response time. R
 Generate independent random `SITE_SECRET` and `CLEANUP_SECRET` values (at least 32 characters each). Keep `.env`, `.edgeone/`, access tokens and user content out of source archives. Ordinary tests must not use production credentials. A fork needs its own hosting project, secrets, `SITE_URL`, cleanup verification, traffic limits and spending alerts.
 
 Never run real-storage or cleanup tools against another operator's service. The diagnostic scripts can create/delete data and the lock reset script requires maintenance downtime.
-
