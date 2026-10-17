@@ -38,12 +38,12 @@ try {
   const files = await Promise.all(services.map((service, index) => send(service, { kind: 'file', size: 300 * MB, name: `${identity}-${index}.bin` }, `${identity}-file-${index}`)));
   const status = await services[0].status();
   assert.ok(status.usedBytes >= 900 * MB && status.usedBytes <= 980 * MB);
-  assert.equal(status.maxFileBytes, MB);
-  await assert.rejects(send(services[0], { kind: 'file', size: MB + 1, name: `${identity}-too-large.bin` }, `${identity}-boundary`), { status: 413 });
-  await send(services[0], { kind: 'file', size: MB, name: `${identity}-small.bin` }, `${identity}-boundary-small`);
+  assert.equal(status.maxFileBytes, 10 * MB);
+  await assert.rejects(send(services[0], { kind: 'file', size: 10 * MB + 1, name: `${identity}-too-large.bin` }, `${identity}-boundary`), { status: 413 });
+  await send(services[0], { kind: 'file', size: 10 * MB, name: `${identity}-small.bin` }, `${identity}-boundary-small`);
   await assert.rejects(send(services[0], { kind: 'file', size: 300 * MB, name: `${identity}-over-capacity.bin` }, `${identity}-full`), { status: 413 });
   assert.equal(files.length, 3);
-  console.log('PASS: real Blob concurrent 900MB reservations enforce 1MB admission limit');
+  console.log('PASS: real Blob concurrent reservations above 700MB enforce 10MB admission limit');
 } finally {
   const outcomes = await Promise.allSettled(receipts.map(receipt => services[0].revoke(receipt.token)));
   assert.equal(outcomes.filter(result => result.status === 'rejected').length, 0, 'Verification fixture revocation failed.');

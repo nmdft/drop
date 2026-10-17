@@ -11,9 +11,9 @@ This is an experimental, best-effort project with no guaranteed response time. R
 - Four-digit pickup codes have only 10,000 possibilities. They are not passwords and must not protect sensitive content.
 - Content is not end-to-end encrypted. Hosting operators and the storage provider can access it. Use HTTPS, but do not confuse transport encryption with content secrecy.
 - Proof of work and per-IP limits do not stop distributed guessing, bots or denial of service. Origin checks are not authentication for non-browser clients.
-- Expiry stops new access; it cannot retract downloaded copies. Blob removal is asynchronous and requires a working cleanup schedule. Ready content remains stored for 72 hours unless revoked earlier; physical deletion can occur later.
+- Expiry stops new access; it cannot retract downloaded copies. Blob removal is asynchronous and requires a working cleanup schedule. Ready content becomes eligible for deletion at its selected pickup expiry (1 hour, 3 hours, 1 day or 3 days); the daily cleanup physically removes expired objects.
 - Capacity is accounted for within this application's Blob namespace only. Deployments sharing an account must budget other projects separately.
-- The Blob bakery lock depends on strong, complete reads/listing. Forced termination may leave tickets and deliberately block writes. Pause traffic and follow README recovery instructions; never reset locks on an active site.
+- The Blob bakery lock depends on strong, complete reads/listing. Forced termination may leave tickets and deliberately block writes. Pause traffic and follow docs/OPERATIONS.md recovery instructions; never reset locks on an active site.
 - Large files may require more than 300MB browser memory when direct file-system saving is unavailable.
 
 ## Deployment safeguards
@@ -22,4 +22,3 @@ Generate independent random `SITE_SECRET` and `CLEANUP_SECRET` values (at least 
 
 Never run real-storage or cleanup tools against another operator's service. The diagnostic scripts can create/delete data and the lock reset script requires maintenance downtime.
 
-Making this repository public does not publish Blob objects or GitHub secret values. It does expose committed code/history and Actions logs, so review those separately before changing visibility.

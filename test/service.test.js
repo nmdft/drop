@@ -45,7 +45,7 @@ test('text pickup preserves leading zero and supports repeated collection', asyn
   const receipt = await service.send(input(), '127.0.0.1');
   assert.equal(receipt.code, '0007');
   assert.equal(receipt.expiresAt, now() + 3600000);
-  assert.equal(receipt.deleteAt, now() + 3 * DAY);
+  assert.equal(receipt.deleteAt, receipt.expiresAt);
   for (let attempt = 0; attempt < 2; attempt += 1) assert.equal((await service.pickup('0007', 'receiver')).text, '你好，另一台电脑！');
 });
 
@@ -54,9 +54,7 @@ test('one-hour expiration rejects access but retains content until daily cleanup
   const receipt = await service.send(input(), '127.0.0.1');
   advance(3600000);
   await assert.rejects(service.pickup(receipt.code, 'receiver'), { status: 404 });
-  assert.equal((await service.cleanup(`Bearer ${CLEANUP}`)).deleted, 0);
   assert.equal((await store.list({ prefix: 'transfers/' })).blobs.length, 1);
-  advance(3 * DAY);
   assert.equal((await service.cleanup(`Bearer ${CLEANUP}`)).deleted, 1);
   assert.equal((await store.list({ prefix: 'transfers/' })).blobs.length, 0);
 });
@@ -107,19 +105,19 @@ test('UTF-8 text limit counts bytes rather than characters', async () => {
   await assert.rejects(service.send(input({ text: '汉'.repeat(333334) }), '127.0.0.1'), { status: 413 });
 });
 
-test('capacity lowers limit at 900MB and rejects exceeding remaining space', async () => {
+test('capacity lowers limit at 700MB and rejects exceeding remaining space', async () => {
   const { service, store, input, now } = fixture();
-  await store.setJSON('transfers/existing', { reservedBytes: 900 * MB, deleteAt: now() + DAY });
-  assert.equal((await service.status()).maxFileBytes, MB);
-  await assert.rejects(service.send(input({ kind: 'file', size: MB + 1, name: 'large.zip' }), '127.0.0.1'), { status: 413 });
+  await store.setJSON('transfers/existing', { reservedBytes: 700 * MB, deleteAt: now() + DAY });
+  assert.equal((await service.status()).maxFileBytes, 10 * MB);
+  await assert.rejects(service.send(input({ kind: 'file', size: 10 * MB + 1, name: 'large.zip' }), '127.0.0.1'), { status: 413 });
   await store.setJSON('transfers/existing', { reservedBytes: LIMITS.capacity - 1000, deleteAt: now() + DAY });
   await assert.rejects(service.send(input({ text: 'hi' }), '127.0.0.1'), { status: 507 });
 });
 
 test('concurrent reservations cannot exceed capacity', async () => {
   const { service, store, input, now } = fixture();
-  await store.setJSON('transfers/existing', { reservedBytes: 850 * MB, deleteAt: now() + DAY });
-  const requests = [input({ kind: 'file', size: 100 * MB, name: 'first.zip' }), input({ kind: 'file', size: 100 * MB, name: 'second.zip' })];
+  await store.setJSON('transfers/existing', { reservedBytes: 600 * MB, deleteAt: now() + DAY });
+  const requests = [input({ kind: 'file', size: 200 * MB, name: 'first.zip' }), input({ kind: 'file', size: 200 * MB, name: 'second.zip' })];
   const results = await Promise.allSettled(requests.map(body => service.send(body, '127.0.0.1')));
   assert.equal(results.filter(result => result.status === 'fulfilled').length, 1);
   assert.ok((await service.status()).usedBytes < LIMITS.capacity);
@@ -292,4 +290,37 @@ test('cleanup paginates multiple expired transfers and is idempotent', async () 
   assert.equal((await service.cleanup(`Bearer ${CLEANUP}`)).more, true);
   assert.equal((await service.cleanup(`Bearer ${CLEANUP}`)).more, false);
   assert.equal((await service.cleanup(`Bearer ${CLEANUP}`)).deleted, 0);
+});
+
+test('700MB boundary allows exactly 10MB and rejects 10MB plus one byte', async () => {
+  const { service, store, input, now } = fixture();
+  await store.setJSON('transfers/existing', { reservedBytes: 700 * MB - 1, deleteAt: now() + DAY });
+  assert.equal((await service.status()).maxFileBytes, LIMITS.capacity - (700 * MB - 1));
+  await store.setJSON('transfers/existing', { reservedBytes: 700 * MB, deleteAt: now() + DAY });
+  assert.equal((await service.status()).maxFileBytes, 10 * MB);
+  await service.send(input({ kind: 'file', size: 10 * MB, name: 'allowed.bin' }), '127.0.0.1');
+  await assert.rejects(service.send(input({ kind: 'file', size: 10 * MB + 1, name: 'large.bin' }), '127.0.0.1'), { status: 413 });
+});
+
+test('daily cleanup honors each retention period and preserves unexpired content', async () => {
+  for (const duration of [3600, 10800, 86400, 259200]) {
+    const { service, input, store, advance } = fixture();
+    const receipt = await service.send(input({ duration }), '127.0.0.1');
+    assert.equal(receipt.deleteAt, receipt.expiresAt);
+    advance(duration * 1000 - 1);
+    assert.equal((await service.cleanup(`Bearer ${CLEANUP}`)).deleted, 0);
+    advance(1);
+    assert.equal((await service.cleanup(`Bearer ${CLEANUP}`)).deleted, 1);
+    assert.equal((await store.list({ prefix: 'transfers/' })).blobs.length, 0);
+  }
+});
+
+test('daily cleanup expires legacy three-day records by their pickup expiry', async () => {
+  const { service, store, input, advance, now } = fixture();
+  const receipt = await service.send(input(), '127.0.0.1');
+  const { id } = await store.get(`codes/${receipt.code}`, { type: 'json' });
+  const record = await store.get(`transfers/${id}`, { type: 'json' });
+  await store.setJSON(`transfers/${id}`, { ...record, deleteAt: now() + 3 * DAY });
+  advance(3600000);
+  assert.equal((await service.cleanup(`Bearer ${CLEANUP}`)).deleted, 1);
 });
