@@ -324,3 +324,18 @@ test('daily cleanup expires legacy three-day records by their pickup expiry', as
   advance(3600000);
   assert.equal((await service.cleanup(`Bearer ${CLEANUP}`)).deleted, 1);
 });
+
+
+test('request body is consumed before asynchronous storage initialization', async () => {
+  for (const action of ['part', 'send']) {
+    const request = new Request('https://example.test/api/' + action + '?index=0', {
+      method: 'POST', body: action === 'part' ? Buffer.alloc(1000000, 7) : JSON.stringify({ kind: 'text', text: 'hello' }),
+    });
+    const response = await handle({ request }, async () => {
+      assert.equal(request.bodyUsed, true);
+      await new Promise(resolve => setTimeout(resolve, 10));
+      return { part: async (token, index, data) => { assert.equal(data.length, 1000000); assert.ok(data.every(byte => byte === 7)); return { ok: true }; }, send: async input => { assert.equal(input.text, 'hello'); return { ok: true }; } };
+    }, action);
+    assert.equal(response.status, 200);
+  }
+});
