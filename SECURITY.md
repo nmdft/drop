@@ -13,7 +13,7 @@ This is an experimental, best-effort project with no guaranteed response time. R
 - Proof of work and per-IP limits do not stop distributed guessing, bots or denial of service. Origin checks are not authentication for non-browser clients.
 - Expiry stops new access; it cannot retract downloaded copies. Blob removal is asynchronous and requires a working cleanup schedule. Ready content becomes eligible for deletion at its selected pickup expiry (1 hour, 3 hours, 1 day or 3 days); the daily cleanup physically removes expired objects.
 - Capacity is accounted for within this application's Blob namespace only. Deployments sharing an account must budget other projects separately.
-- The Blob bakery lock depends on strong, complete reads/listing. Forced termination may leave tickets and deliberately block writes. Pause traffic and follow docs/OPERATIONS.md recovery instructions; never reset locks on an active site.
+- The Blob bakery lock depends on strong, complete reads/listing. Forced termination may leave tickets and deliberately block writes. Pause traffic and follow the README maintenance instructions; never reset locks on an active site.
 - Large files may require more than 300MB browser memory when direct file-system saving is unavailable.
 
 ## Deployment safeguards
