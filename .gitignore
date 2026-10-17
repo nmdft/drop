@@ -14,3 +14,5 @@ coverage/
 *.pfx
 .cc-connect/
 local-test/
+
+/lib/generated-schedule.js

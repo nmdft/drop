@@ -33,23 +33,24 @@ test('scheduled cleanup reports unfinished work when its time budget expires', a
   assert.equal((await response.json()).more, true);
 });
 
-test('build injects scheduler credential privately and never into static assets', async () => {
+test('build automatically pairs scheduler credentials without environment secrets', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'drop-build-test-'));
   try {
     await cp('public', join(dir, 'public'), { recursive: true });
     await cp('edgeone.json', join(dir, 'edgeone.json'));
     const script = resolve('scripts/build.mjs');
     const build = env => spawnSync(process.execPath, [script], { cwd: dir, env: { ...process.env, SITE_SECRET: '', CLEANUP_SECRET: '', ...env }, encoding: 'utf8' });
-    assert.equal(build({ CLEANUP_SECRET: secret }).status, 0);
-    let config = JSON.parse(await readFile(join(dir, 'edgeone.json')));
-    assert.deepEqual(config.schedules[0].payload, { token: secret });
-    assert.equal(config.schedules[0].timezone, 'Asia/Shanghai');
-    for (const file of ['index.html', 'app.js', 'style.css', 'proof-worker.js']) assert.ok(!(await readFile(join(dir, 'dist', file), 'utf8')).includes(secret));
     assert.equal(build({}).status, 0);
+    let config = JSON.parse(await readFile(join(dir, 'edgeone.json')));
+    const token = config.schedules[0].payload.token;
+    assert.match(token, /^[a-f0-9]{64}$/);
+    assert.ok((await readFile(join(dir, 'lib/generated-schedule.js'), 'utf8')).includes(token));
+    assert.equal(config.schedules[0].timezone, 'Asia/Shanghai');
+    for (const file of ['index.html', 'app.js', 'style.css', 'proof-worker.js']) assert.ok(!(await readFile(join(dir, 'dist', file), 'utf8')).includes(token));
+    assert.equal(build({ SITE_SECRET: secret, CLEANUP_SECRET: secret }).status, 0);
     config = JSON.parse(await readFile(join(dir, 'edgeone.json')));
-    assert.equal(config.schedules[0].payload, undefined);
-    assert.notEqual(build({ SITE_SECRET: secret }).status, 0);
-    assert.notEqual(build({ CLEANUP_SECRET: 'short' }).status, 0);
+    assert.notEqual(config.schedules[0].payload.token, token);
+    assert.notEqual(config.schedules[0].payload.token, secret);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
@@ -59,4 +60,13 @@ test('scheduled cleanup rejects malformed and oversized payloads', async () => {
     const response = await scheduledCleanup({ request: new Request('https://example.test', { method: 'POST', body }) }, () => { throw new Error('must not read storage'); });
     assert.equal(response.status, status);
   }
+});
+
+test('deployment token rejects unauthorized requests before opening Blob', async () => {
+  let called = false;
+  const factory = async env => { called = true; assert.equal(env.CLEANUP_SECRET, secret); return { cleanup: async () => ({ deleted: 0, more: false }) }; };
+  assert.equal((await scheduledCleanup(context('wrong'), factory, Date.now, secret)).status, 403);
+  assert.equal(called, false);
+  assert.equal((await scheduledCleanup(context(), factory, Date.now, secret)).status, 200);
+  assert.equal(called, true);
 });

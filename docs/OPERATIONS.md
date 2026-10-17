@@ -26,8 +26,10 @@ EDGEONE_PROJECT_ID=your-project-id EDGEONE_PAGES_API_TOKEN=your-token node scrip
 
 ## 原生定时清理
 
-`edgeone.json` 的 `daily-cleanup` 使用 `Asia/Shanghai` 时区，每天 03:23 POST 到 `/api/scheduled-cleanup`。生产构建需要 `CLEANUP_SECRET`，任务 payload 由 `scripts/build.mjs` 注入；不要提交或公开生成后的私有构建配置。CI 不配置生产密钥，仅测试模板。生产构建日志应出现 `Native cleanup schedule: credential configured (value hidden).`；如果显示 `template only`，说明构建环境未拿到密钥，必须补齐环境变量并重新部署。日志不输出密钥值。
+`edgeone.json` 的 `daily-cleanup` 使用 `Asia/Shanghai` 时区，每天 03:23 POST 到 `/api/scheduled-cleanup`。构建自动生成本次部署的随机调用凭据，同时写入任务 payload 和被 Git 忽略的 `lib/generated-schedule.js`（只由云函数引用），不进入 `dist`。生产日志应出现 `Native cleanup schedule: automatic deployment credential configured (value hidden).`，不输出凭据。限制项目配置与构建产物的访问权限，不要公开私有构建配置。
 
-定时函数复用原清理授权及存储锁，逐批处理，80 秒后不再启动下一批，函数上限为 120 秒。未完成会记录日志并返回 503，不应假定平台保证重试；检查日志并按需用已有带 Bearer 授权的 `/api/cleanup` 分批补清。不要通过公开 URL 或公开 payload 放置密钥。
+站点签名密钥与定时调用凭据独立：前者在第一次请求时保存在私有 Blob `config/site-secret-v1`，后续只读取。初始化使用现有协调锁，不依赖 Blob SDK 不保证生效的 `onlyIfNew`。读取失败或配置损坏时报错，不会静默生成替代密钥。全新项目才会创建新值；旧站点首次初始化会采用原 `SITE_SECRET`，成功后不再依赖该变量。回滚时保留原变量，避免旧版代码无法读取新存储配置；自动初始化的新站点若回滚到手填版，需要管理员将持久密钥安全配置到旧版环境。
 
-回滚时应回退到上一版本、重新部署并恢复旧 GitHub 清理工作流；仅回退代码不一定恢复已经移除的外部调度。
+定时函数先验证部署凭据，再打开 Blob，逐批处理，80 秒后不再启动下一批，函数上限 120 秒。未完成返回 503，不假定平台会重试；检查日志后按平台能力手动触发任务。保留 `/api/cleanup` 供管理员分批恢复：旧 `CLEANUP_SECRET` 仍配置时使用原 Bearer；否则使用持久站点密钥 HMAC-SHA256 派生值（消息 `drop/manual-cleanup/v1`，hex 编码），不要暴露主密钥或将值写入 URL。
+
+清空 `config/` 不属于日常清理。备份或迁移此配置必须走受保护的管理员渠道；密钥遗失会让旧上传、下载和撤销凭证失效。定时调用凭据随部署变化只影响调度，不影响这些用户凭证。部署切换期若出现授权失败，检查任务和函数是否属于同一部署，确认最新部署后再触发；平台回滚也必须同步恢复对应的调度配置。
