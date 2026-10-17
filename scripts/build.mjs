@@ -13,7 +13,10 @@ const cleanupSecret = process.env.CLEANUP_SECRET;
 if (cleanupSecret) {
   if (cleanupSecret.length < 32) throw new Error('CLEANUP_SECRET must contain at least 32 characters.');
   task.payload = { token: cleanupSecret };
+  console.log('Native cleanup schedule: credential configured (value hidden).');
 } else if (process.env.SITE_SECRET) {
   throw new Error('Set CLEANUP_SECRET before deploying the native cleanup schedule.');
+} else {
+  console.log('Native cleanup schedule: template only; no deployment credential configured.');
 }
 await writeFile('edgeone.json', JSON.stringify(config, null, 2) + '\n');

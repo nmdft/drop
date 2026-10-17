@@ -26,7 +26,7 @@ EDGEONE_PROJECT_ID=your-project-id EDGEONE_PAGES_API_TOKEN=your-token node scrip
 
 ## 原生定时清理
 
-`edgeone.json` 的 `daily-cleanup` 使用 `Asia/Shanghai` 时区，每天 03:23 POST 到 `/api/scheduled-cleanup`。生产构建需要 `CLEANUP_SECRET`，任务 payload 由 `scripts/build.mjs` 注入；不要提交或公开生成后的私有构建配置。CI 不配置生产密钥，仅测试模板。
+`edgeone.json` 的 `daily-cleanup` 使用 `Asia/Shanghai` 时区，每天 03:23 POST 到 `/api/scheduled-cleanup`。生产构建需要 `CLEANUP_SECRET`，任务 payload 由 `scripts/build.mjs` 注入；不要提交或公开生成后的私有构建配置。CI 不配置生产密钥，仅测试模板。生产构建日志应出现 `Native cleanup schedule: credential configured (value hidden).`；如果显示 `template only`，说明构建环境未拿到密钥，必须补齐环境变量并重新部署。日志不输出密钥值。
 
 定时函数复用原清理授权及存储锁，逐批处理，80 秒后不再启动下一批，函数上限为 120 秒。未完成会记录日志并返回 503，不应假定平台保证重试；检查日志并按需用已有带 Bearer 授权的 `/api/cleanup` 分批补清。不要通过公开 URL 或公开 payload 放置密钥。
 
