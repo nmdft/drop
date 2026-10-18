@@ -2,7 +2,7 @@ import { mkdir, copyFile, rm, readFile, writeFile } from 'node:fs/promises';
 
 await rm('dist', { recursive: true, force: true });
 await mkdir('dist');
-for (const file of ['index.html', 'style.css', 'theme.js', 'code-input.js', 'app.js', 'proof-worker.js']) await copyFile(`public/${file}`, `dist/${file}`);
+for (const file of ['index.html', 'style.css', 'favicon.svg', 'favicon.ico', 'theme.js', 'code-input.js', 'app.js', 'proof-worker.js']) await copyFile(`public/${file}`, `dist/${file}`);
 console.log('Built static assets into dist/');
 
 // Pair the scheduler with this deployment's server-only credential. Never use it for user tickets.
