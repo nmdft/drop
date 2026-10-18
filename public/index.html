@@ -5,34 +5,88 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Drop 临时取件站：用四位取件码，临时传递一个文件或一段文字。">
   <title>Drop 临时取件站｜文件与文字取件</title>
+  <script src="theme.js"></script>
   <link rel="stylesheet" href="style.css">
   <script src="app.js" defer></script>
 </head>
 <body>
-<div class="ambient ambient-a" aria-hidden="true"></div><div class="ambient ambient-b" aria-hidden="true"></div>
 <main>
-  <header class="site-header"><a class="brand" href="/" aria-label="Drop 临时取件站首页"><span class="brand-mark">D</span><strong>Drop 临时取件站</strong></a></header>
-  <section class="hero" aria-labelledby="page-title"><h1 id="page-title">发送内容，另一台设备输入取件码即可打开。</h1></section>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Drop 临时取件站首页">
+      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10m-4-4 4 4 4-4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg></span>
+      <strong>Drop</strong><span class="brand-description">临时取件站</span>
+    </a>
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="切换深色模式" aria-pressed="false">
+      <svg class="moon-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20.5 13.2A8.6 8.6 0 0 1 10.8 3.5a8.6 8.6 0 1 0 9.7 9.7Z"/></svg>
+      <svg class="sun-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    </button>
+  </header>
+
+  <section class="hero" aria-labelledby="page-title">
+    <h1 id="page-title">在这里放下，<span>在那边打开。</span></h1>
+  </section>
 
   <div class="workspace">
     <section class="panel send-panel" aria-labelledby="send-heading">
-      <div class="panel-top"><h2 id="send-heading">发送内容</h2></div>
+      <div class="panel-top">
+        <span class="panel-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 16V4m-4 4 4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg></span>
+        <h2 id="send-heading">发送内容</h2>
+      </div>
       <form id="send-form">
-        <div id="composer" class="composer"><div class="text-box"><textarea id="text" placeholder="粘贴文字、链接或笔记…" aria-label="要传递的文字"></textarea></div><label id="file-picker" class="file-picker"><span class="file-glyph">＋</span><span id="file-label">拖入文件或点击选择</span><span id="file-limit" class="file-limit">最多 300 MB</span><input id="file" type="file" aria-label="选择文件"></label><button id="clear-file" class="clear-file" type="button" hidden aria-label="移除文件">×</button></div>
-        <div class="send-options"><label for="duration">取件码有效期</label><select id="duration"><option value="3600">1 小时</option><option value="10800">3 小时</option><option value="86400">1 天</option><option value="259200">3 天</option></select></div>
-        <button class="primary action-button" id="send-button" type="submit">生成取件码</button>
+        <div id="composer" class="composer">
+          <div class="text-box"><textarea id="text" placeholder="粘贴文字、链接或笔记…" aria-label="要传递的文字"></textarea></div>
+          <div class="file-slot">
+            <label id="file-picker" class="file-picker">
+              <span class="file-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M14 3v6h6M12 12v6m-3-3h6"/></svg></span>
+              <span class="file-copy"><span id="file-label">拖入文件或点击选择</span><span id="file-limit" class="file-limit">最多 300 MB</span></span>
+              <span class="file-plus" aria-hidden="true">＋</span>
+              <input id="file" type="file" aria-label="选择文件">
+            </label>
+            <button id="clear-file" class="clear-file" type="button" hidden aria-label="移除文件">×</button>
+          </div>
+        </div>
+        <div class="send-options"><label for="duration"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg>取件码有效期</label><select id="duration"><option value="3600">1 小时</option><option value="10800">3 小时</option><option value="86400">1 天</option><option value="259200">3 天</option></select></div>
+        <button class="primary action-button" id="send-button" type="submit"><span>生成取件码</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg></button>
       </form>
-      <p id="send-notice" class="notice" role="status" aria-live="polite"></p><progress id="send-progress" max="1" value="0" hidden aria-label="上传进度"></progress>
-      <div id="receipt" class="receipt" hidden><span class="eyebrow">已准备好</span><div class="code" id="receipt-code"></div><p id="receipt-expiry" class="detail"></p><input id="receipt-link" class="small-input" readonly aria-label="取件链接"><div class="actions"><button id="copy-code" type="button">复制取件码</button><button id="copy-link" type="button">复制链接</button></div><details><summary>撤销这次分享</summary><input id="revoke-link" class="small-input" readonly aria-label="撤销链接"><div class="actions"><button id="copy-revoke" type="button">复制撤销链接</button><button id="revoke-button" class="danger" type="button">立即撤销</button></div></details></div>
-    </section>
-    <section class="panel pickup-panel" aria-labelledby="pickup-heading">
-      <div class="panel-top"><h2 id="pickup-heading">取件</h2></div>
-      <div class="pickup-center"><form id="pickup-form"><label class="sr-only" for="code">取件码</label><input id="code" type="text" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" placeholder="取件码" autocomplete="off" required><button id="pickup-button" class="primary action-button" type="submit">打开内容</button></form></div>
-      <p id="pickup-notice" class="notice" role="status" aria-live="polite"></p><div id="received" class="received" hidden><h3 id="received-name"></h3><p id="received-detail" class="detail"></p><div class="received-text-wrap"><pre id="received-text" hidden></pre><button id="copy-text" type="button" hidden>复制</button></div><button id="download-button" class="primary" type="button" hidden>下载文件</button></div>
+      <p id="send-notice" class="notice" role="status" aria-live="polite"></p>
+      <progress id="send-progress" max="1" value="0" hidden aria-label="上传进度"></progress>
+      <div id="receipt" class="receipt" hidden>
+        <span class="eyebrow">已准备好</span>
+        <div class="code" id="receipt-code"></div>
+        <p id="receipt-expiry" class="detail"></p>
+        <input id="receipt-link" class="small-input" readonly aria-label="取件链接">
+        <div class="actions"><button id="copy-code" type="button">复制取件码</button><button id="copy-link" type="button">复制链接</button></div>
+        <details><summary>撤销这次分享</summary><input id="revoke-link" class="small-input" readonly aria-label="撤销链接"><div class="actions"><button id="copy-revoke" type="button">复制撤销链接</button><button id="revoke-button" class="danger" type="button">立即撤销</button></div></details>
+      </div>
     </section>
 
+    <section class="panel pickup-panel" aria-labelledby="pickup-heading">
+      <div class="panel-top">
+        <span class="panel-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v12m-4-4 4 4 4-4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg></span>
+        <h2 id="pickup-heading">取件</h2>
+      </div>
+      <div class="pickup-center">
+        <div class="pickup-illustration" aria-hidden="true">
+          <span class="illustration-orbit"></span>
+          <span class="illustration-paper"><svg viewBox="0 0 24 24" fill="none"><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>
+          <span class="illustration-tray"><svg viewBox="0 0 32 32" fill="none"><path d="M16 5v13m-5-5 5 5 5-5M6 19v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6"/></svg></span>
+        </div>
+        <form id="pickup-form">
+          <label class="sr-only" for="code">取件码</label>
+          <input id="code" type="text" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" placeholder="四位取件码" autocomplete="off" required>
+          <button id="pickup-button" class="primary action-button" type="submit"><span>打开内容</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg></button>
+        </form>
+      </div>
+      <p id="pickup-notice" class="notice" role="status" aria-live="polite"></p>
+      <div id="received" class="received" hidden>
+        <h3 id="received-name"></h3><p id="received-detail" class="detail"></p>
+        <div class="received-text-wrap"><pre id="received-text" hidden></pre><button id="copy-text" type="button" hidden>复制</button></div>
+        <button id="download-button" class="primary" type="button" hidden>下载文件</button>
+      </div>
+    </section>
   </div>
-  <footer>到期停止领取，内容按保留规则清理；请勿上传敏感内容</footer>
+
+  <footer><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 3 8 3v5c0 5-8 10-8 10S4 16 4 11V6l8-3Z"/><path d="M12 8v4m0 4h.01"/></svg><span>到期停止领取<span class="footer-divider"> · </span><span class="privacy-note">请勿上传敏感内容</span></span></footer>
 </main>
 </body>
 </html>
