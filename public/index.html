@@ -8,6 +8,7 @@
   <script src="theme.js"></script>
   <link rel="stylesheet" href="style.css">
   <script src="app.js" defer></script>
+  <script src="code-input.js" defer></script>
 </head>
 <body>
 <main>
@@ -72,8 +73,11 @@
           <span class="illustration-tray"><svg viewBox="0 0 32 32" fill="none"><path d="M16 5v13m-5-5 5 5 5-5M6 19v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6"/></svg></span>
         </div>
         <form id="pickup-form">
-          <label class="sr-only" for="code">取件码</label>
-          <input id="code" type="text" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" placeholder="四位取件码" autocomplete="off" required>
+          <label class="sr-only" for="code">四位取件码</label>
+          <div class="code-entry">
+            <div class="code-slots" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+            <input id="code" type="text" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="off" required>
+          </div>
           <button id="pickup-button" class="primary action-button" type="submit"><span>打开内容</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg></button>
         </form>
       </div>
@@ -86,7 +90,7 @@
     </section>
   </div>
 
-  <footer><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 3 8 3v5c0 5-8 10-8 10S4 16 4 11V6l8-3Z"/><path d="M12 8v4m0 4h.01"/></svg><span>到期停止领取<span class="footer-divider"> · </span><span class="privacy-note">请勿上传敏感内容</span></span></footer>
+  <footer><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 3 8 3v5c0 5-8 10-8 10S4 16 4 11V6l8-3Z"/><path d="M12 8v4m0 4h.01"/></svg><span>到期停止领取，文件定时删除<span class="footer-divider"> · </span><span class="privacy-note">请勿上传敏感内容</span></span></footer>
 </main>
 </body>
 </html>
